@@ -10,6 +10,7 @@ GRAY  = (150,150,150)
 BLACK = (0,0,0)
 RED   = (255,0,0)
 GREEN = (0,255,0)
+BLUE  = (0,0,255)
 #pygame initialization
 pygame.init()
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -43,24 +44,6 @@ class piece:
     def get_king_status(self):
         return self._is_king
     
-    def set_selected(self, state):
-        self._is_selected = state
-    
-    #to draw the piece onto the pygame display
-    def draw(self, window, row, col):
-        color = RED if self._team == 'red' else BLACK
-
-        #if piece is selected, draw green circle under it
-        if self._is_selected:
-            pygame.draw.circle(window, GREEN, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2)
-        
-        #draw the piece at the location
-        pygame.draw.circle(window, color, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 3)
-        
-        #if king draw white circle ontop of piece
-        if self._is_king:
-            pygame.draw.circle(window, WHITE, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 8)
-
 #board class
 class board:
     #init the board
@@ -68,6 +51,9 @@ class board:
         self._grid = [[' ' for _ in range(8)] for _ in range(8)]
         self._selected_piece = None
         self._selected_pos = None
+        self._valid_moves = None
+        self._red_count = 12
+        self._black_count = 12
 
         #set the initial piece layout
         for row in range(8):
@@ -81,6 +67,8 @@ class board:
 
                     else:
                         self._grid[row][col] = '.'
+
+        self.update_valid_pieces()
 
     #print the board to terminal
     def print_board(self):
@@ -99,59 +87,172 @@ class board:
             for col in range(COLS):
                 if (row + col) % 2 == 1:
                     pygame.draw.rect(window, GRAY, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
-                
+                    piece_at_cell = self._grid[row][col]
+
+                    if isinstance(piece_at_cell, piece):
+                        if (row, col) in self._valid_pieces:
+                            pygame.draw.circle(window, BLUE,(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2.5)
+
+                        color = RED if piece_at_cell._team == 'red' else BLACK
+                        pygame.draw.circle(window, color,(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 3)
+                        
+                        if piece_at_cell._is_king:
+                            pygame.draw.circle(window, WHITE,(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2),SQUARE_SIZE // 8)
+
+        if self._valid_moves:
+            for chain in self._valid_moves:
+                for i in range(1, len(chain)):  
+                    row, col = chain[i]
+                    color = GREEN if i == len(chain) - 1 else WHITE
+                    pygame.draw.circle(window, color, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 4) 
+        
+        if self._selected_pos:
+            row, col = self._selected_pos
+            pygame.draw.circle(window, GREEN,(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2),SQUARE_SIZE // 2, 3)
+    
+    def update_valid_pieces(self):
+        self._valid_pieces = []
+        for row in range(ROWS):
+            for col in range(COLS):
                 piece_at_cell = self._grid[row][col]
                 if isinstance(piece_at_cell, piece):
-                    piece_at_cell.draw(window, row, col)
-    
+                    valid_moves = self.get_valid_moves(row, col)
+                    if valid_moves:
+                        self._valid_pieces.append((row, col))
+        print(self._valid_pieces)
+
+    def get_valid_moves(self, row, col):
+        piece_to_move = self._grid[row][col]
+        valid_move_chains = []
+
+        if not isinstance(piece_to_move, piece):
+            return valid_move_chains
+
+        directions = []
+        if piece_to_move._team == 'red' or piece_to_move.get_king_status():
+            directions.append((1, -1))  #down-left
+            directions.append((1, 1))   #down-right
+        if piece_to_move._team == 'black' or piece_to_move.get_king_status():
+            directions.append((-1, -1)) #up-left
+            directions.append((-1, 1))  #up-right
+
+        def find_jumps(row, col, current_chain, visited):
+            jumped = False
+
+            for direction in directions:
+                new_row = row + direction[0] * 2
+                new_col = col + direction[1] * 2
+                middle_row = row + direction[0]
+                middle_col = col + direction[1]
+
+                if 0 <= new_row < 8 and 0 <= new_col < 8:
+                    if 0 <= middle_row < 8 and 0 <= middle_col < 8:
+                        middle_piece = self._grid[middle_row][middle_col]
+
+                    if self._grid[new_row][new_col] == '.' and isinstance(middle_piece, piece) and middle_piece._team != piece_to_move._team:
+                        if (new_row, new_col) not in visited:
+                            visited.add((new_row, new_col))
+                            new_chain = current_chain + [(new_row, new_col)]
+                            jumped = True
+                            find_jumps(new_row, new_col, new_chain, visited)
+
+            if not jumped and len(current_chain) > 1:
+                valid_move_chains.append(current_chain)
+        
+        find_jumps(row, col, [(row, col)], set([(row, col)]))
+
+        if not valid_move_chains:
+            for direction in directions:
+                new_row = row + direction[0]
+                new_col = col + direction[1]
+
+                if 0 <= new_row < 8 and 0 <= new_col < 8 and self._grid[new_row][new_col] == '.':
+                    valid_move_chains.append([(row, col), (new_row, new_col)])
+        
+        print(valid_move_chains)
+        return valid_move_chains
+
     def select_piece(self, row, col):
         piece_at_cell = self._grid[row][col]
         if isinstance (piece_at_cell, piece):
             self._selected_piece = piece_at_cell
             self._selected_pos = (row, col)
-            piece_at_cell.set_selected(True)
+            self._valid_moves = self.get_valid_moves(row, col)
 
-    def move_piece(self, row, col):
-        if self._selected_piece:
-            old_row, old_col = self._selected_pos
+    def deselect_piece(self):
+        self._selected_piece = None
+        self._selected_pos = None
+        self._valid_moves = None
+        self.update_valid_pieces()
 
-            if self.is_valid_move(old_row, old_col, row, col):
-                self._grid[row][col] = self._selected_piece
-                self._grid[old_row][old_col] = '.'
-                self._selected_piece.set_selected(False)
-                self._selected_piece = None
-                self._selected_pos = None
-
-    def is_valid_move(self, start_row, start_col, end_row, end_col):
+    def move_piece(self, start_row, start_col, end_row, end_col):
         piece_to_move = self._grid[start_row][start_col]
-        target = self._grid[end_row][end_col]
+        piece_at_dest = self._grid[end_row][end_col]
 
-        if target != '.':
+        if not isinstance(piece_to_move, piece) or piece_at_dest != '.':
             return False
 
-        row_diff = abs(end_row - start_row)
-        col_diff = abs(end_col - start_col)
+        valid_moves = self.get_valid_moves(start_row, start_col)
+            
+        for chain in valid_moves:
+            if (end_row, end_col) in chain:
+                move_distance = abs(start_row - end_row)
 
-        if not piece_to_move.get_king_status():
-            if row_diff == 1 and col_diff == 1:
-                if piece_to_move._team == 'red' and end_row > start_row:
-                    return True
-                elif piece_to_move._team == 'black' and end_row < start_row:
-                    return True
-                return False
-        
-        if row_diff == 2 and col_diff == 2:
-            middle_row = (start_row + end_row) // 2
-            middle_col = (start_col + end_col) // 2
-            middle_piece = self._grid[middle_row][middle_col]
-            if isinstance(middle_piece, piece) and middle_piece._team != piece_to_move._team:
-                if piece_to_move._team == 'red' and end_row > start_row:
-                    self._grid[middle_row][middle_col] = '.'
-                    return True
-                elif piece_to_move._team == 'black' and end_row < start_row:
-                    self._grid[middle_row][middle_col] = '.'
-                    return True
-                return False
+                if move_distance == 1:
+                    if chain[-1] == (end_row, end_col):
+                        self._grid[end_row][end_col] = piece_to_move
+                        self._grid[start_row][start_col] = '.'
+                        
+                        if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
+                            piece_to_move.make_king()
+                        return True
+                        
+                elif move_distance == 2:
+                    if chain[-1] == (end_row, end_col):
+                        self._grid[end_row][end_col] = piece_to_move
+                        self._grid[start_row][start_col] = '.'
+
+                        middle_row = (start_row + end_row) // 2
+                        middle_col = (start_col + end_col) // 2
+                        middle_piece = self._grid[middle_row][middle_col]
+                        if isinstance(middle_piece, piece):
+                                self._grid[middle_row][middle_col] = '.'
+                                if middle_piece._team == 'red':
+                                    self._red_count -= 1
+                                elif middle_piece._team == 'black':
+                                    self._black_count -= 1
+
+                        if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
+                            piece_to_move.make_king()
+                        return True
+                
+                elif len(chain) > 2:
+                    if chain[-1] == (end_row, end_col):
+                        self._grid[end_row][end_col] = piece_to_move
+                        self._grid[start_row][start_col] = '.'
+
+                        for i in range(1, len(chain)):
+                            middle_row = (chain[i-1][0] + chain[i][0]) // 2
+                            middle_col = (chain[i-1][1] + chain[i][1]) // 2
+                            middle_piece = self._grid[middle_row][middle_col]
+                            if isinstance(middle_piece, piece):
+                                self._grid[middle_row][middle_col] = '.'
+                                if middle_piece._team == 'red':
+                                    self._red_count -= 1
+                                elif middle_piece._team == 'black':
+                                    self._black_count -= 1
+
+                        if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
+                            piece_to_move.make_king()
+                        return True  
+        return False
+
+    def check_win(self):
+        if self._red_count == 0:
+            return True
+        if self._black_count == 0:
+            return True
+        return False
 
 def main():
     game_board = board()
@@ -173,7 +274,12 @@ def main():
                 if game_board._selected_piece is None:
                     game_board.select_piece(row, col)
                 else:
-                    game_board.move_piece(row, col)
+                    if game_board.move_piece(game_board._selected_pos[0], game_board._selected_pos[1], row, col):
+                        game_board.print_board()
+                    game_board.deselect_piece()
+
+        if game_board.check_win():
+            running = False
 
         game_board.draw_board(WINDOW)
         pygame.display.update()
