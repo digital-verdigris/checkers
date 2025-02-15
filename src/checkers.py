@@ -54,6 +54,7 @@ class board:
         self._valid_moves = None
         self._red_count = 12
         self._black_count = 12
+        self._turn = 'b'
 
         #set the initial piece layout
         for row in range(8):
@@ -72,6 +73,7 @@ class board:
 
     #print the board to terminal
     def print_board(self):
+        print('---------------')
         for row_idx, row in enumerate(self._grid):
             for col_idx, cell in enumerate(row):
                 if isinstance(cell, piece):
@@ -79,6 +81,9 @@ class board:
                 else:
                     print(cell, end = ' ')
             print()
+        print('---------------')
+        print()
+
 
     #draw the board in pygame display
     def draw_board(self, window):
@@ -112,14 +117,40 @@ class board:
     
     def update_valid_pieces(self):
         self._valid_pieces = []
+        has_jump = False
+
         for row in range(ROWS):
             for col in range(COLS):
                 piece_at_cell = self._grid[row][col]
+
                 if isinstance(piece_at_cell, piece):
                     valid_moves = self.get_valid_moves(row, col)
                     if valid_moves:
-                        self._valid_pieces.append((row, col))
-        print(self._valid_pieces)
+                        if abs(valid_moves[0][0][0] - valid_moves[0][1][0]) == 2:
+                            if has_jump:
+                                if self._turn == 'b' and piece_at_cell._team == 'black':
+                                    self._valid_pieces.append((row,col))
+                            
+                                elif self._turn == 'r' and piece_at_cell._team == 'red':
+                                    self._valid_pieces.append((row,col))
+                            else:
+                                if self._turn == 'b' and piece_at_cell._team == 'black':
+                                    has_jump = True
+                                    self._valid_pieces = []
+                                    self._valid_pieces.append((row,col))
+                            
+                                elif self._turn == 'r' and piece_at_cell._team == 'red':
+                                    has_jump = True
+                                    self._valid_pieces = []
+                                    self._valid_pieces.append((row,col))
+                        print(has_jump)
+                        if not has_jump:
+                            if self._turn == 'b' and piece_at_cell._team == 'black':
+                                self._valid_pieces.append((row,col))
+                            
+                            elif self._turn == 'r' and piece_at_cell._team == 'red':
+                                self._valid_pieces.append((row,col))
+
 
     def get_valid_moves(self, row, col):
         piece_to_move = self._grid[row][col]
@@ -169,20 +200,20 @@ class board:
                 if 0 <= new_row < 8 and 0 <= new_col < 8 and self._grid[new_row][new_col] == '.':
                     valid_move_chains.append([(row, col), (new_row, new_col)])
         
-        print(valid_move_chains)
         return valid_move_chains
 
     def select_piece(self, row, col):
         piece_at_cell = self._grid[row][col]
         if isinstance (piece_at_cell, piece):
-            self._selected_piece = piece_at_cell
-            self._selected_pos = (row, col)
-            self._valid_moves = self.get_valid_moves(row, col)
+            if (row, col) in self._valid_pieces:
+                self._selected_piece = piece_at_cell
+                self._selected_pos = (row, col)
+                self._valid_moves = self.get_valid_moves(row, col)
 
     def deselect_piece(self):
         self._selected_piece = None
         self._selected_pos = None
-        self._valid_moves = None
+        self._valid_moves = []
         self.update_valid_pieces()
 
     def move_piece(self, start_row, start_col, end_row, end_col):
@@ -214,6 +245,9 @@ class board:
                                 elif middle_piece._team == 'black':
                                     self._black_count -= 1
 
+                        self.change_turn()
+                        return True
+
                 elif move_distance == 1:
                     if chain[-1] == (end_row, end_col):
                         self._grid[end_row][end_col] = piece_to_move
@@ -221,6 +255,8 @@ class board:
                         
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
+
+                        self.change_turn()
                         return True
                         
                 elif move_distance == 2:
@@ -240,15 +276,27 @@ class board:
 
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
+                            
+                        self.change_turn()
                         return True
         return False
 
     def check_win(self):
         if self._red_count == 0:
             return True
+
         if self._black_count == 0:
             return True
         return False
+    
+    def change_turn(self):
+        if self._turn == 'b':
+            self._turn = 'r'
+            
+        elif self._turn == 'r':
+            self._turn = 'b'
+        
+        print(self._turn)
 
 def main():
     game_board = board()
@@ -272,6 +320,7 @@ def main():
                 else:
                     if game_board.move_piece(game_board._selected_pos[0], game_board._selected_pos[1], row, col):
                         game_board.print_board()
+
                     game_board.deselect_piece()
 
         if game_board.check_win():
