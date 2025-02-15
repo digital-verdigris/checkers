@@ -198,7 +198,23 @@ class board:
             if (end_row, end_col) in chain:
                 move_distance = abs(start_row - end_row)
 
-                if move_distance == 1:
+                if len(chain) > 2:
+                    if chain[-1] == (end_row, end_col):
+                        self._grid[end_row][end_col] = piece_to_move
+                        self._grid[start_row][start_col] = '.'
+
+                        for i in range(1, len(chain)):
+                            middle_row = (chain[i-1][0] + chain[i][0]) // 2
+                            middle_col = (chain[i-1][1] + chain[i][1]) // 2
+                            middle_piece = self._grid[middle_row][middle_col]
+                            if isinstance(middle_piece, piece):
+                                self._grid[middle_row][middle_col] = '.'
+                                if middle_piece._team == 'red':
+                                    self._red_count -= 1
+                                elif middle_piece._team == 'black':
+                                    self._black_count -= 1
+
+                elif move_distance == 1:
                     if chain[-1] == (end_row, end_col):
                         self._grid[end_row][end_col] = piece_to_move
                         self._grid[start_row][start_col] = '.'
@@ -225,26 +241,6 @@ class board:
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
                         return True
-                
-                elif len(chain) > 2:
-                    if chain[-1] == (end_row, end_col):
-                        self._grid[end_row][end_col] = piece_to_move
-                        self._grid[start_row][start_col] = '.'
-
-                        for i in range(1, len(chain)):
-                            middle_row = (chain[i-1][0] + chain[i][0]) // 2
-                            middle_col = (chain[i-1][1] + chain[i][1]) // 2
-                            middle_piece = self._grid[middle_row][middle_col]
-                            if isinstance(middle_piece, piece):
-                                self._grid[middle_row][middle_col] = '.'
-                                if middle_piece._team == 'red':
-                                    self._red_count -= 1
-                                elif middle_piece._team == 'black':
-                                    self._black_count -= 1
-
-                        if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
-                            piece_to_move.make_king()
-                        return True  
         return False
 
     def check_win(self):
