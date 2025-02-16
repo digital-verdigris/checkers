@@ -1,19 +1,21 @@
 import pygame
 
 #constants
-WIDTH, HEIGHT = 600, 600
+WIDTH, HEIGHT = 640, 640
 ROWS, COLS = 8,8
-SQUARE_SIZE = WIDTH // COLS
+SQUARE_SIZE = 512 // 8
 
 WHITE = (255,255,255)
 GRAY  = (150,150,150)
 BLACK = (0,0,0)
 RED   = (255,0,0)
-GREEN = (0,255,0)
+GREEN = (55,148,110)
 BLUE  = (0,0,255)
+BROWN = (69,40,60)
 #pygame initialization
 pygame.init()
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("verdigris checkers")
 
 #piece class
 class piece:
@@ -25,17 +27,22 @@ class piece:
 
     #print to terminal
     def print(self):
-        if self._team == 'red':
-            name = 'R'
-        elif self._team == 'black':
-            name = 'B'
+        if self._is_king:
+            if self._team == 'red':
+                name = 'R'
+            elif self._team == 'black':
+                name = 'B'
+            else:
+                name = '?'
         else:
-            name = '?'
+            if self._team == 'red':
+                name = 'r'
+            elif self._team == 'black':
+                name = 'b'
+            else:
+                name = '?'
             
-        if not self._is_king:
-            print(name, end = ' ')
-        else:
-            print(f"{name}K", end = ' ')
+        print(name, end = ' ')
     
     #to set king if needed
     def make_king(self):
@@ -55,6 +62,40 @@ class board:
         self._red_count = 12
         self._black_count = 12
         self._turn = 'b'
+
+        #load sprites
+        self.red_piece_img = pygame.image.load("assets/pngs/red_checker.png")
+        self.black_piece_img = pygame.image.load("assets/pngs/black_checker.png")
+        self.red_king_piece_img = pygame.image.load("assets/pngs/red_king_checker.png")
+        self.black_king_piece_img = pygame.image.load("assets/pngs/black_king_checker.png")
+
+        self.piece_select_img = pygame.image.load("assets/pngs/piece_select.png")
+
+        self.dark_space_img = pygame.image.load("assets/pngs/dark_checker_space.png")
+        self.light_space_img = pygame.image.load("assets/pngs/light_checker_space.png")
+        
+        self.chain_node_img = pygame.image.load("assets/pngs/chain_node.png")
+        self.chain_select_img = pygame.image.load("assets/pngs/chain_select.png")
+        self.select_img = pygame.image.load("assets/pngs/select.png")
+
+        self.score_board_img = pygame.image.load("assets/pngs/score_board.png")
+
+        #scale to fit squares
+        self.red_piece_img = pygame.transform.scale(self.red_piece_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.black_piece_img = pygame.transform.scale(self.black_piece_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.red_king_piece_img = pygame.transform.scale(self.red_king_piece_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.black_king_piece_img = pygame.transform.scale(self.black_king_piece_img, (SQUARE_SIZE, SQUARE_SIZE))      
+       
+        self.piece_select_img = pygame.transform.scale(self.piece_select_img, (SQUARE_SIZE, SQUARE_SIZE))      
+
+        self.dark_space_img = pygame.transform.scale(self.dark_space_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.light_space_img = pygame.transform.scale(self.light_space_img, (SQUARE_SIZE, SQUARE_SIZE))
+        
+        self.chain_node_img = pygame.transform.scale(self.chain_node_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.chain_select_img = pygame.transform.scale(self.chain_select_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.select_img = pygame.transform.scale(self.select_img, (SQUARE_SIZE, SQUARE_SIZE))
+
+        self.score_board_img = pygame.transform.scale(self.score_board_img, (SQUARE_SIZE, SQUARE_SIZE))
 
         #set the initial piece layout
         for row in range(8):
@@ -87,33 +128,58 @@ class board:
 
     #draw the board in pygame display
     def draw_board(self, window):
-        window.fill(WHITE)
+        w_buffer = 64
+        h_buffer = 64
+
+        window.fill(GREEN)
+
+        pygame.draw.rect(window, BROWN, (62, 62, 516, 516))
+
+        window.blit(self.score_board_img, (0, 0))
+
         for row in range(ROWS):
             for col in range(COLS):
-                if (row + col) % 2 == 1:
-                    pygame.draw.rect(window, GRAY, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
-                    piece_at_cell = self._grid[row][col]
+                pos_x = col * SQUARE_SIZE + w_buffer
+                pos_y = row * SQUARE_SIZE + h_buffer
+                if (row + col) % 2 == 1: 
+                    window.blit(self.dark_space_img, (pos_x, pos_y))
+                else:                    
+                    window.blit(self.light_space_img, (pos_x, pos_y))
+                
+                piece_at_cell = self._grid[row][col]
 
-                    if isinstance(piece_at_cell, piece):
-                        if (row, col) in self._valid_pieces:
-                            pygame.draw.circle(window, BLUE,(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 2.5)
+                if isinstance(piece_at_cell, piece):
+                    if (row, col) in self._valid_pieces and not self._selected_piece:
+                        window.blit(self.select_img, (pos_x, pos_y))
 
-                        color = RED if piece_at_cell._team == 'red' else BLACK
-                        pygame.draw.circle(window, color,(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 3)
-                        
-                        if piece_at_cell._is_king:
-                            pygame.draw.circle(window, WHITE,(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2),SQUARE_SIZE // 8)
+                    if not piece_at_cell._is_king:
+                        if piece_at_cell._team == 'red':
+                            window.blit(self.red_piece_img, (pos_x, pos_y))
+                        elif piece_at_cell._team == 'black':
+                            window.blit(self.black_piece_img, (pos_x, pos_y))
+                    
+                    elif piece_at_cell._is_king:
+                        if piece_at_cell._team == 'red':
+                            window.blit(self.red_king_piece_img, (pos_x, pos_y))
+                        elif piece_at_cell._team == 'black':
+                            window.blit(self.black_king_piece_img, (pos_x, pos_y))
 
         if self._valid_moves:
             for chain in self._valid_moves:
                 for i in range(1, len(chain)):  
                     row, col = chain[i]
-                    color = GREEN if i == len(chain) - 1 else WHITE
-                    pygame.draw.circle(window, color, (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2), SQUARE_SIZE // 4) 
+                    pos_x = col * SQUARE_SIZE + w_buffer
+                    pos_y = row * SQUARE_SIZE + h_buffer
+                    if i == len(chain) - 1:
+                        window.blit(self.chain_select_img, (pos_x, pos_y))
+                    else: 
+                        window.blit(self.chain_node_img, (pos_x, pos_y))
         
         if self._selected_pos:
             row, col = self._selected_pos
-            pygame.draw.circle(window, GREEN,(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2),SQUARE_SIZE // 2, 3)
+            pos_x = col * SQUARE_SIZE + w_buffer
+            pos_y = row * SQUARE_SIZE + h_buffer
+            window.blit(self.piece_select_img, (pos_x, pos_y))
     
     def update_valid_pieces(self):
         self._valid_pieces = []
@@ -143,7 +209,6 @@ class board:
                                     has_jump = True
                                     self._valid_pieces = []
                                     self._valid_pieces.append((row,col))
-                        print(has_jump)
                         if not has_jump:
                             if self._turn == 'b' and piece_at_cell._team == 'black':
                                 self._valid_pieces.append((row,col))
@@ -216,6 +281,10 @@ class board:
         self._valid_moves = []
         self.update_valid_pieces()
 
+    def animate_piece(self, chain):
+
+        None
+
     def move_piece(self, start_row, start_col, end_row, end_col):
         piece_to_move = self._grid[start_row][start_col]
         piece_at_dest = self._grid[end_row][end_col]
@@ -244,7 +313,8 @@ class board:
                                     self._red_count -= 1
                                 elif middle_piece._team == 'black':
                                     self._black_count -= 1
-
+                        
+                        self.animate_piece(chain)
                         self.change_turn()
                         return True
 
@@ -256,6 +326,7 @@ class board:
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
 
+                        self.animate_piece(chain)
                         self.change_turn()
                         return True
                         
@@ -276,7 +347,8 @@ class board:
 
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
-                            
+                        
+                        self.animate_piece(chain)
                         self.change_turn()
                         return True
         return False
@@ -312,16 +384,24 @@ def main():
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
-                col = mouse_x // SQUARE_SIZE
-                row = mouse_y // SQUARE_SIZE
+                print(mouse_x)
+                print(mouse_y)
 
-                if game_board._selected_piece is None:
-                    game_board.select_piece(row, col)
-                else:
-                    if game_board.move_piece(game_board._selected_pos[0], game_board._selected_pos[1], row, col):
-                        game_board.print_board()
+                col = (mouse_x // SQUARE_SIZE) - 1
+                row = (mouse_y // SQUARE_SIZE) - 1
 
-                    game_board.deselect_piece()
+                print(col)
+                print(row)
+
+                if (col >= 0 and col <= 7) and (row >= 0 and row <= 7):
+                    if game_board._selected_piece is None:
+                        game_board.select_piece(row, col)
+                    else:
+                        if game_board.move_piece(game_board._selected_pos[0], game_board._selected_pos[1], row, col):
+                            game_board.print_board()
+                        game_board.deselect_piece()
+
+        #game_board._update_time()
 
         if game_board.check_win():
             running = False
