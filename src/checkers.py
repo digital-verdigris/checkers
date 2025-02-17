@@ -78,7 +78,17 @@ class board:
         self.chain_select_img = pygame.image.load("assets/pngs/chain_select.png")
         self.select_img = pygame.image.load("assets/pngs/select.png")
 
-        self.score_board_img = pygame.image.load("assets/pngs/score_board.png")
+        self.red_icon_img = pygame.image.load("assets/pngs/red_icon.png")
+        self.black_icon_img = pygame.image.load("assets/pngs/black_icon.png")
+
+        self.red_turn_icon_img = pygame.image.load("assets/pngs/red_turn_icon.png")
+        self.black_turn_icon_img = pygame.image.load("assets/pngs/black_turn_icon.png")
+
+        self.logo_img = pygame.image.load("assets/pngs/checkers_logo.png")
+
+        #load textures
+
+        self.felt_img = pygame.image.load("assets/textures/felt_texture.jpg")
 
         #scale to fit squares
         self.red_piece_img = pygame.transform.scale(self.red_piece_img, (SQUARE_SIZE, SQUARE_SIZE))
@@ -95,7 +105,15 @@ class board:
         self.chain_select_img = pygame.transform.scale(self.chain_select_img, (SQUARE_SIZE, SQUARE_SIZE))
         self.select_img = pygame.transform.scale(self.select_img, (SQUARE_SIZE, SQUARE_SIZE))
 
-        self.score_board_img = pygame.transform.scale(self.score_board_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.red_icon_img = pygame.transform.scale(self.red_icon_img, (SQUARE_SIZE * 2, SQUARE_SIZE * 2))
+        self.black_icon_img = pygame.transform.scale(self.black_icon_img, (SQUARE_SIZE * 4, SQUARE_SIZE * 2))
+
+        self.red_turn_icon_img = pygame.transform.scale(self.red_turn_icon_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.black_turn_icon_img = pygame.transform.scale(self.black_turn_icon_img, (SQUARE_SIZE, SQUARE_SIZE))
+
+        self.logo_img = pygame.transform.scale(self.logo_img, (SQUARE_SIZE * 2, SQUARE_SIZE))
+
+        self.felt_img = pygame.transform.scale(self.felt_img, (WIDTH, HEIGHT))
 
         #set the initial piece layout
         for row in range(8):
@@ -133,9 +151,20 @@ class board:
 
         window.fill(GREEN)
 
+        window.blit(self.felt_img, (0, 0))
+
+        window.blit(self.logo_img, (0, 0))
+
         pygame.draw.rect(window, BROWN, (62, 62, 516, 516))
 
-        window.blit(self.score_board_img, (0, 0))
+        if self._turn == 'r':
+                window.blit(self.red_turn_icon_img, (66, 4))
+
+        elif self._turn == 'b':
+                window.blit(self.black_turn_icon_img, (66, 4))
+
+        window.blit(self.red_icon_img, (126, 4))
+        window.blit(self.black_icon_img, (318, 4))
 
         for row in range(ROWS):
             for col in range(COLS):
@@ -368,8 +397,6 @@ class board:
         elif self._turn == 'r':
             self._turn = 'b'
         
-        print(self._turn)
-
 def main():
     game_board = board()
     game_board.print_board()
@@ -384,14 +411,9 @@ def main():
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
-                print(mouse_x)
-                print(mouse_y)
 
                 col = (mouse_x // SQUARE_SIZE) - 1
                 row = (mouse_y // SQUARE_SIZE) - 1
-
-                print(col)
-                print(row)
 
                 if (col >= 0 and col <= 7) and (row >= 0 and row <= 7):
                     if game_board._selected_piece is None:
