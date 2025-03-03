@@ -61,9 +61,11 @@ class board:
         self._valid_moves = None
         self._red_count = 12
         self._black_count = 12
-        self._turn = 'b'
+        self._turn = 'black'
 
         #load sprites
+
+        #piece icons
         self.red_piece_img = pygame.image.load("assets/pngs/red_checker.png")
         self.black_piece_img = pygame.image.load("assets/pngs/black_checker.png")
         self.red_king_piece_img = pygame.image.load("assets/pngs/red_king_checker.png")
@@ -81,13 +83,18 @@ class board:
         self.red_icon_img = pygame.image.load("assets/pngs/red_icon.png")
         self.black_icon_img = pygame.image.load("assets/pngs/black_icon.png")
 
+        #turn icons
         self.red_turn_icon_img = pygame.image.load("assets/pngs/red_turn_icon.png")
         self.black_turn_icon_img = pygame.image.load("assets/pngs/black_turn_icon.png")
 
+        #score icons
+        self.r_score_img = pygame.image.load("assets/pngs/r_score_icon.png")
+        self.b_score_img = pygame.image.load("assets/pngs/b_score_icon.png")
+
+        #logo
         self.logo_img = pygame.image.load("assets/pngs/checkers_logo.png")
 
         #load textures
-
         self.felt_img = pygame.image.load("assets/textures/felt_texture.jpg")
 
         #scale to fit squares
@@ -112,6 +119,9 @@ class board:
         self.black_turn_icon_img = pygame.transform.scale(self.black_turn_icon_img, (SQUARE_SIZE, SQUARE_SIZE))
 
         self.logo_img = pygame.transform.scale(self.logo_img, (SQUARE_SIZE * 2, SQUARE_SIZE))
+
+        self.r_score_img = pygame.transform.scale(self.r_score_img, (SQUARE_SIZE, SQUARE_SIZE))
+        self.b_score_img = pygame.transform.scale(self.b_score_img, (SQUARE_SIZE, SQUARE_SIZE))
 
         self.felt_img = pygame.transform.scale(self.felt_img, (WIDTH, HEIGHT))
 
@@ -153,14 +163,14 @@ class board:
 
         window.blit(self.felt_img, (0, 0))
 
-        window.blit(self.logo_img, (0, 0))
+        #window.blit(self.logo_img, (0, 0))
 
         pygame.draw.rect(window, BROWN, (62, 62, 516, 516))
 
-        if self._turn == 'r':
+        if self._turn == 'red':
                 window.blit(self.red_turn_icon_img, (66, 4))
 
-        elif self._turn == 'b':
+        elif self._turn == 'black':
                 window.blit(self.black_turn_icon_img, (66, 4))
 
         window.blit(self.red_icon_img, (126, 4))
@@ -223,26 +233,27 @@ class board:
                     if valid_moves:
                         if abs(valid_moves[0][0][0] - valid_moves[0][1][0]) == 2:
                             if has_jump:
-                                if self._turn == 'b' and piece_at_cell._team == 'black':
+                                if self._turn == 'black' and piece_at_cell._team == 'black':
                                     self._valid_pieces.append((row,col))
                             
-                                elif self._turn == 'r' and piece_at_cell._team == 'red':
+                                elif self._turn == 'red' and piece_at_cell._team == 'red':
                                     self._valid_pieces.append((row,col))
                             else:
-                                if self._turn == 'b' and piece_at_cell._team == 'black':
+                                if self._turn == 'black' and piece_at_cell._team == 'black':
                                     has_jump = True
                                     self._valid_pieces = []
                                     self._valid_pieces.append((row,col))
                             
-                                elif self._turn == 'r' and piece_at_cell._team == 'red':
+                                elif self._turn == 'red' and piece_at_cell._team == 'red':
                                     has_jump = True
                                     self._valid_pieces = []
                                     self._valid_pieces.append((row,col))
+                        
                         if not has_jump:
-                            if self._turn == 'b' and piece_at_cell._team == 'black':
+                            if self._turn == 'black' and piece_at_cell._team == 'black':
                                 self._valid_pieces.append((row,col))
                             
-                            elif self._turn == 'r' and piece_at_cell._team == 'red':
+                            elif self._turn == 'red' and piece_at_cell._team == 'red':
                                 self._valid_pieces.append((row,col))
 
 
@@ -343,6 +354,9 @@ class board:
                                 elif middle_piece._team == 'black':
                                     self._black_count -= 1
                         
+                        if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
+                            piece_to_move.make_king()
+                            
                         self.animate_piece(chain)
                         self.change_turn()
                         return True
@@ -391,11 +405,11 @@ class board:
         return False
     
     def change_turn(self):
-        if self._turn == 'b':
-            self._turn = 'r'
+        if self._turn == 'black':
+            self._turn = 'red'
             
-        elif self._turn == 'r':
-            self._turn = 'b'
+        elif self._turn == 'red':
+            self._turn = 'black'
         
 def main():
     game_board = board()
