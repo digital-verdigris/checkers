@@ -284,11 +284,34 @@ class checkers_board:
         self._valid_moves = []
         self.update_valid_pieces()
 
-    def animate_piece(self, chain):
+    def validate_move(self, move):
+        start_row = move[0]
+        start_col = move[1]
+        end_row = move[2]
+        end_col = move[3]
 
-        None
+        piece_to_move = self._grid[start_row][start_col]
+        piece_at_dest = self._grid[end_row][end_col]
 
-    def move_piece(self, start_row, start_col, end_row, end_col):
+        if not isinstance(piece_to_move, checkers_piece) or piece_at_dest != '.':
+            print("invalid move!")
+            return False
+
+        valid_moves = self.get_valid_moves(start_row, start_col)
+    
+        for chain in valid_moves:
+            if chain[-1] == (end_row, end_col):
+                print("valid move!")
+                return True  
+        print("invalid move!")
+        return False
+
+    def move_piece(self, move):
+        start_row = move[0]
+        start_col = move[1]
+        end_row = move[2]
+        end_col = move[3]
+
         piece_to_move = self._grid[start_row][start_col]
         piece_at_dest = self._grid[end_row][end_col]
 
@@ -319,9 +342,7 @@ class checkers_board:
                         
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
-                            
-                        self.animate_piece(chain)
-                        self.change_turn()
+                        
                         return True
 
                 elif move_distance == 1:
@@ -332,8 +353,6 @@ class checkers_board:
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
 
-                        self.animate_piece(chain)
-                        self.change_turn()
                         return True
                         
                 elif move_distance == 2:
@@ -353,9 +372,6 @@ class checkers_board:
 
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
-                        
-                        self.animate_piece(chain)
-                        self.change_turn()
                         return True
         return False
 
@@ -366,10 +382,3 @@ class checkers_board:
         if self._black_count == 0:
             return True
         return False
-    
-    def change_turn(self):
-        if self._turn == 'black':
-            self._turn = 'red'
-            
-        elif self._turn == 'red':
-            self._turn = 'black'
