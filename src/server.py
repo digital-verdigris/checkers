@@ -25,6 +25,7 @@ class checkers_server:
     def receive_move(self):
         if self.client_sock:
             try:
+                self.client_sock.setblocking(False)
                 move = self.client_sock.recv(1024).decode()
                 print(f"server recieved move: {move}")
                 return move

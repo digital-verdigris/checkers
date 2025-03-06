@@ -20,18 +20,23 @@ class checkers_game:
         self.clock = pygame.time.Clock()
         self.turn = 'black'
 
-        client_or_host = input("input 'h' if host or 'c' if client: ")
         
-        if client_or_host == 'h':
-            self.team = 'black'
-            self.server = checkers_server()
-            threading.Thread(target=self.server.start_listener, daemon=True).start()
-            self.server.wait_for_client()
+        while True:
+            client_or_host = input("input 'h' if host or 'c' if client: ")
+            if client_or_host == 'h':
+                self.team = 'black'
+                self.game_board._team = 'black'
+                self.server = checkers_server()
+                threading.Thread(target=self.server.start_listener, daemon=True).start()
+                self.server.wait_for_client()
+                break
 
-        elif client_or_host == 'c':
-            self.team = 'red'
-            self.client = checkers_client()
-            self.client.connect_to_server()
+            elif client_or_host == 'c':
+                self.team = 'red'
+                self.game_board._team = 'red'
+                self.client = checkers_client()
+                self.client.connect_to_server()
+                break
     
     def change_turn(self):
         if self.turn == 'black':
@@ -43,8 +48,6 @@ class checkers_game:
             self.turn = 'black'
             self.game_board._turn = self.turn
             self.game_board.update_valid_pieces()
-
-        print(f"it is now {self.turn}'s turn")
 
     def send_move(self, move):
         self.game_board.move_piece(move)
@@ -95,17 +98,21 @@ class checkers_game:
 
                                 if self.validate_move(move):
                                     self.send_move(move)
-                                    self.game_board.print_board()
                                 self.game_board.deselect_piece()
                 else:
                     self.recieve_move()
 
-            print("updating pygame")
             self.game_board.draw_board(self.window)
             pygame.display.update()
 
             if self.game_board.check_win():
                 self.running = False
+        
+        if hasattr(self, 'server'):
+            self.server.close()
+
+        elif hasattr(self, 'client'):
+            self.client.close()
 
         pygame.quit()
 

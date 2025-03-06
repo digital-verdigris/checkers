@@ -25,6 +25,7 @@ class checkers_board:
         self._red_count = 12
         self._black_count = 12
         self._turn = 'black'
+        self._team = None
 
         #load sprites
 
@@ -151,7 +152,7 @@ class checkers_board:
                 piece_at_cell = self._grid[row][col]
 
                 if isinstance(piece_at_cell, checkers_piece):
-                    if (row, col) in self._valid_pieces and not self._selected_piece:
+                    if (row, col) in self._valid_pieces and not self._selected_piece and self._turn == self._team:
                         window.blit(self.select_img, (pos_x, pos_y))
 
                     if not piece_at_cell._is_king:
@@ -294,16 +295,13 @@ class checkers_board:
         piece_at_dest = self._grid[end_row][end_col]
 
         if not isinstance(piece_to_move, checkers_piece) or piece_at_dest != '.':
-            print("invalid move!")
             return False
 
         valid_moves = self.get_valid_moves(start_row, start_col)
     
         for chain in valid_moves:
             if chain[-1] == (end_row, end_col):
-                print("valid move!")
                 return True  
-        print("invalid move!")
         return False
 
     def move_piece(self, move):
@@ -343,6 +341,7 @@ class checkers_board:
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
                         
+                        self.print_board()                       
                         return True
 
                 elif move_distance == 1:
@@ -353,6 +352,7 @@ class checkers_board:
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
 
+                        self.print_board()
                         return True
                         
                 elif move_distance == 2:
@@ -372,6 +372,8 @@ class checkers_board:
 
                         if (piece_to_move._team == 'red' and end_row == 7) or (piece_to_move._team == 'black' and end_row == 0):
                             piece_to_move.make_king()
+                        
+                        self.print_board()
                         return True
         return False
 
