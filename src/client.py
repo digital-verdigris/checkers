@@ -1,7 +1,7 @@
 import socket
 
 class checkers_client:
-    def __init__(self, host="localhost", port=5000):
+    def __init__(self, host="0.0.0.0", port=5000):
         self.host = host
         self.port = port
         self.client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

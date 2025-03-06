@@ -33,9 +33,12 @@ class checkers_server:
                 return None
         return None
 
-    def wait_for_client(self):
+    def wait_for_client(self, menu, window):
         while self.client_sock is None:
-            pass 
+            if not menu.draw_waiting_for_connection(window):
+                break
+            pass
+        return True
     
     def close(self):
         if self.client_sock:

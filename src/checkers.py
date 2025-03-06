@@ -3,6 +3,7 @@ import threading
 from server import checkers_server
 from client import checkers_client
 from board import checkers_board
+from menu import checkers_menu
 
 WIDTH, HEIGHT = 640, 640
 ROWS, COLS = 8,8
@@ -10,34 +11,18 @@ SQUARE_SIZE = 512 // 8
 
 class checkers_game:
     def __init__(self):
+        self.game_board = checkers_board()
+        self.menu = checkers_menu()
+        self.clock = pygame.time.Clock()
+        self.turn = 'black'
+        
         #pygame initialization
         pygame.init()
         self.window = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("verdigris checkers")
 
-        self.game_board = checkers_board()
         self.running = True
-        self.clock = pygame.time.Clock()
-        self.turn = 'black'
 
-        
-        while True:
-            client_or_host = input("input 'h' if host or 'c' if client: ")
-            if client_or_host == 'h':
-                self.team = 'black'
-                self.game_board._team = 'black'
-                self.server = checkers_server()
-                threading.Thread(target=self.server.start_listener, daemon=True).start()
-                self.server.wait_for_client()
-                break
-
-            elif client_or_host == 'c':
-                self.team = 'red'
-                self.game_board._team = 'red'
-                self.client = checkers_client()
-                self.client.connect_to_server()
-                break
-    
     def change_turn(self):
         if self.turn == 'black':
             self.turn = 'red'
@@ -76,6 +61,29 @@ class checkers_game:
     def validate_move(self, move):
         return self.game_board.validate_move(move)
 
+    def main_loop(self):
+        menu_response = self.menu.main_menu(self.window)
+    
+        if menu_response == 'h':
+            self.team = 'black'
+            self.game_board._team = 'black'
+            self.server = checkers_server()
+            threading.Thread(target=self.server.start_listener, daemon=True).start()
+            if self.server.wait_for_client(self.menu, self.window):
+                self.game_loop()
+            else:
+                self.close()
+
+        elif menu_response == 'c':
+            self.team = 'red'
+            self.game_board._team = 'red'
+            self.client = checkers_client()
+            self.client.connect_to_server()
+            self.game_loop()
+
+        else:
+            self.close()
+
     def game_loop(self):
         while self.running:
             self.clock.tick(60)  #60 FPS
@@ -102,12 +110,15 @@ class checkers_game:
                 else:
                     self.recieve_move()
 
-            self.game_board.draw_board(self.window)
+            self.game_board.draw_board(self.window)            
             pygame.display.update()
 
             if self.game_board.check_win():
                 self.running = False
         
+        self.close()
+
+    def close(self):
         if hasattr(self, 'server'):
             self.server.close()
 
@@ -118,7 +129,7 @@ class checkers_game:
 
 def main():
     game = checkers_game()
-    game.game_loop()
+    game.main_loop()
 
 if __name__ == "__main__":
     main()
