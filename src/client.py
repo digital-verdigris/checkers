@@ -1,14 +1,17 @@
 import socket
 
 class checkers_client:
-    def __init__(self, host="0.0.0.0", port=5000):
+    def __init__(self, host, port=5000):
         self.host = host
         self.port = port
         self.client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
     def connect_to_server(self):
-        self.client_sock.connect((self.host, self.port))
-        print(f"connected to server at {self.host}:{self.port}")
+        try:
+            self.client_sock.connect((self.host, self.port))
+            print(f"Connected to server at {self.host}:{self.port}")
+        except Exception as e:
+            print(f"Failed to connect to the server: {e}")
     
     def send_move(self, move):
         if self.client_sock:

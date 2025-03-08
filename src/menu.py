@@ -27,7 +27,8 @@ class checkers_menu:
     def __init__(self):
         self.felt_img = pygame.image.load("assets/textures/felt_texture.jpg")
         self.felt_img = pygame.transform.scale(self.felt_img, (WIDTH, HEIGHT))
-        pass
+        self.input_text = ""
+        self.active_input = False 
 
     def draw_menu(self, window):
         window.fill(GREEN)
@@ -37,22 +38,60 @@ class checkers_menu:
         pygame.draw.rect(window, GRAY, start_connect_button)
         pygame.draw.rect(window, GRAY, quit_button)
         
-        start_host_text = font.render("Start Host", True, BLACK)
-        start_connect_text = font.render("Connect To Host", True, BLACK)
+        start_host_text = font.render("Host", True, BLACK)
+        start_connect_text = font.render("Connect", True, BLACK)
         quit_text = font.render("Quit", True, BLACK)
         
-        window.blit(start_host_text, (start_host_button.x + 50, start_host_button.y + 10))
-        window.blit(start_connect_text, (start_connect_button.x + 50, start_connect_button.y + 10))
-        window.blit(quit_text, (quit_button.x + 50, quit_button.y + 10))
+        window.blit(start_host_text, (start_host_button.x + 60, start_host_button.y + 10))
+        window.blit(start_connect_text, (start_connect_button.x + 30, start_connect_button.y + 10))
+        window.blit(quit_text, (quit_button.x + 60, quit_button.y + 10))
         pygame.display.update()
 
-    def draw_waiting_for_connection(self, window):
+    def draw_waiting_for_connection(self, window, host_ip):
         window.blit(self.felt_img, (0, 0))
+        
+        ip_text = font.render(f"Hosting At: {host_ip}...", True, BLACK)
+        window.blit(ip_text, (150, HEIGHT // 4))
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
         pygame.display.update()
         return True
+
+    def draw_input_ip(self, window):
+        while True:
+            window.blit(self.felt_img, (0, 0))
+
+            ip_text = font.render("Enter Host IP...", True, BLACK)
+            window.blit(ip_text, (120, HEIGHT // 4))
+            
+            input_box = pygame.Rect(120, HEIGHT // 4 + 50, 400, 50)
+            pygame.draw.rect(window, GRAY, input_box) 
+
+            input_text = font.render(self.input_text, True, BLACK)
+            window.blit(input_text, (input_box.x + 10, input_box.y + 10))
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return False
+                if event.type == pygame.KEYDOWN:
+                    if self.active_input:
+                        if event.key == pygame.K_RETURN:
+                            return self.input_text
+                        elif event.key == pygame.K_BACKSPACE:
+                            self.input_text = self.input_text[:-1]
+                        else:
+                            self.input_text += event.unicode 
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if input_box.collidepoint(event.pos):
+                        self.active_input = True 
+                    else:
+                        self.active_input = False
+
+            pygame.display.update()
+        return None
 
     def main_menu(self, window):
         running = True

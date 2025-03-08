@@ -77,7 +77,8 @@ class checkers_game:
         elif menu_response == 'c':
             self.team = 'red'
             self.game_board._team = 'red'
-            self.client = checkers_client()
+            host_ip = self.menu.draw_input_ip(self.window)
+            self.client = checkers_client(host_ip)
             self.client.connect_to_server()
             self.game_loop()
 
