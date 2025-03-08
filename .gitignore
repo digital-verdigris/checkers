@@ -1,0 +1,11 @@
+src/__pycache__/server.cpython-39.pyc
+src/__pycache__/piece.cpython-39.pyc
+src/__pycache__/menu.cpython-39.pyc
+src/__pycache__/keygen.cpython-39.pyc
+src/__pycache__/client.cpython-39.pyc
+src/__pycache__/board.cpython-39.pyc
+keys/server_private_key.pem
+keys/server_certificate.pem
+keys/client_private_key.pem
+keys/client_certificate.pem
+src/__pycache__/server.cpython-39.pyc

@@ -4,6 +4,7 @@ from server import checkers_server
 from client import checkers_client
 from board import checkers_board
 from menu import checkers_menu
+from keygen import checkers_keygen
 
 WIDTH, HEIGHT = 640, 640
 ROWS, COLS = 8,8
@@ -65,6 +66,9 @@ class checkers_game:
         menu_response = self.menu.main_menu(self.window)
     
         if menu_response == 'h':
+            keygen = checkers_keygen("server")
+            keygen.generate_keys_and_certificate()
+
             self.team = 'black'
             self.game_board._team = 'black'
             self.server = checkers_server()
@@ -75,6 +79,9 @@ class checkers_game:
                 self.close()
 
         elif menu_response == 'c':
+            keygen = checkers_keygen("client")
+            keygen.generate_keys_and_certificate()
+
             self.team = 'red'
             self.game_board._team = 'red'
             self.client = checkers_client()
