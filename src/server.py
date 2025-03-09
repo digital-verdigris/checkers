@@ -49,7 +49,7 @@ class checkers_server:
     def wait_for_client(self, menu, window):
         while self.client_sock is None:
             if not menu.draw_waiting_for_connection(window, self.host):
-                return Fals
+                return False
             pass
         return True
     
