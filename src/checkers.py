@@ -17,6 +17,7 @@ class checkers_game:
         self.menu = checkers_menu()
         self.clock = pygame.time.Clock()
         self.turn = 'black'
+        self.channel_open = False
         
         # Initialize pygame
         pygame.init()
@@ -47,6 +48,9 @@ class checkers_game:
         self.game_board.move_piece(move)
         self.change_turn()
 
+    def notify_data_channel_opened(self):
+        self.channel_open = True
+
     def start_signaling_server(self):
         # Create and run a new event loop for the signaling server in this thread.
         loop = asyncio.new_event_loop()
@@ -67,6 +71,7 @@ class checkers_game:
             self.game_board._team = 'black'
             # Start the signaling server in the background.
             threading.Thread(target=self.start_signaling_server, daemon=True).start()
+            
             # Create a WebRTC client as the "offer" for hosting.
             self.client = checkers_websockets_client("offer", "ws://localhost:5000", self)
             threading.Thread(target=self.run_async_client, daemon=True).start()
@@ -77,9 +82,23 @@ class checkers_game:
             # Create a WebRTC client as the "answer" for joining.
             self.client = checkers_websockets_client("answer", "ws://localhost:5000", self)
             threading.Thread(target=self.run_async_client, daemon=True).start()
-    
-        # Start the main game loop.
+
+        else:
+            self.close()
+
+
+        while not self.channel_open:
+            self.menu.draw_waiting_menu(self.window)
+            pygame.display.update()
+            self.clock.tick(30)
+
         self.game_loop()
+
+    async def wait_for_connection(self):
+        while not self.channel_open:
+            self.menu.draw_waiting_menu(self.window)
+            pygame.display.update()
+            await asyncio.sleep(0.1)
 
     def game_loop(self):
         while self.running:
@@ -107,9 +126,12 @@ class checkers_game:
             self.game_board.draw_board(self.window)
             pygame.display.update()
 
-            if self.game_board.check_win():
+            winner = self.game_board.check_win()
+            if winner:
                 self.running = False
         
+        self.menu.draw_win_screen(self.window, winner)
+
         self.close()
 
     def close(self):

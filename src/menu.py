@@ -38,14 +38,20 @@ class checkers_menu:
         pygame.draw.rect(window, GRAY, start_connect_button)
         pygame.draw.rect(window, GRAY, quit_button)
         
-        start_host_text = font.render("Host", True, BLACK)
-        start_connect_text = font.render("Connect", True, BLACK)
+        start_host_text = font.render("Black", True, BLACK)
+        start_connect_text = font.render("Red", True, RED)
         quit_text = font.render("Quit", True, BLACK)
         
-        window.blit(start_host_text, (start_host_button.x + 60, start_host_button.y + 10))
-        window.blit(start_connect_text, (start_connect_button.x + 30, start_connect_button.y + 10))
+        window.blit(start_host_text, (start_host_button.x + 55, start_host_button.y + 10))
+        window.blit(start_connect_text, (start_connect_button.x + 65, start_connect_button.y + 10))
         window.blit(quit_text, (quit_button.x + 60, quit_button.y + 10))
+       
         pygame.display.update()
+
+    def draw_waiting_menu(self, window):
+        window.blit(self.felt_img, (0, 0))
+        ip_text = font.render("Waiting For Connection...", True, BLACK)
+        window.blit(ip_text, (150, HEIGHT // 4))
 
     def draw_waiting_for_connection(self, window, host_ip):
         window.blit(self.felt_img, (0, 0))
@@ -59,11 +65,26 @@ class checkers_menu:
         pygame.display.update()
         return True
 
-    def draw_input_ip(self, window):
+    def draw_win_screen(self, window, winner):
+        while True:
+            window.blit(self.felt_img, (0, 0))
+            if winner == 'black':
+                winner_text = font.render(f"Black Wins!", True, BLACK)
+            elif winner == 'red':
+                winner_text = font.render(f"Red Wins!", True, RED)
+        
+            window.blit(winner_text, (150, HEIGHT // 4))
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return False 
+
+    def draw_input_password(self, window):
         while True:
             window.blit(self.felt_img, (0, 0))
 
-            ip_text = font.render("Enter Host IP...", True, BLACK)
+            ip_text = font.render("Enter Password...", True, BLACK)
             window.blit(ip_text, (120, HEIGHT // 4))
             
             input_box = pygame.Rect(120, HEIGHT // 4 + 50, 400, 50)

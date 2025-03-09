@@ -44,9 +44,6 @@ class checkers_board:
         self.chain_select_img = pygame.image.load("assets/pngs/chain_select.png")
         self.select_img = pygame.image.load("assets/pngs/select.png")
 
-        self.red_icon_img = pygame.image.load("assets/pngs/red_icon.png")
-        self.black_icon_img = pygame.image.load("assets/pngs/black_icon.png")
-
         #turn icons
         self.red_turn_icon_img = pygame.image.load("assets/pngs/red_turn_icon.png")
         self.black_turn_icon_img = pygame.image.load("assets/pngs/black_turn_icon.png")
@@ -75,9 +72,6 @@ class checkers_board:
         self.chain_node_img = pygame.transform.scale(self.chain_node_img, (SQUARE_SIZE, SQUARE_SIZE))
         self.chain_select_img = pygame.transform.scale(self.chain_select_img, (SQUARE_SIZE, SQUARE_SIZE))
         self.select_img = pygame.transform.scale(self.select_img, (SQUARE_SIZE, SQUARE_SIZE))
-
-        self.red_icon_img = pygame.transform.scale(self.red_icon_img, (SQUARE_SIZE * 2, SQUARE_SIZE * 2))
-        self.black_icon_img = pygame.transform.scale(self.black_icon_img, (SQUARE_SIZE * 4, SQUARE_SIZE * 2))
 
         self.red_turn_icon_img = pygame.transform.scale(self.red_turn_icon_img, (SQUARE_SIZE, SQUARE_SIZE))
         self.black_turn_icon_img = pygame.transform.scale(self.black_turn_icon_img, (SQUARE_SIZE, SQUARE_SIZE))
@@ -136,9 +130,6 @@ class checkers_board:
 
         elif self._turn == 'black':
                 window.blit(self.black_turn_icon_img, (66, 4))
-
-        window.blit(self.red_icon_img, (126, 4))
-        window.blit(self.black_icon_img, (318, 4))
 
         for row in range(ROWS):
             for col in range(COLS):
@@ -379,8 +370,8 @@ class checkers_board:
 
     def check_win(self):
         if self._red_count == 0:
-            return True
-
+            return "black"
         if self._black_count == 0:
-            return True
+            return "red"
+        
         return False
