@@ -66,21 +66,26 @@ class checkers_game:
     def main_loop(self):
         menu_response = self.menu.main_menu(self.window)
     
+        password = self.menu.draw_input_password(self.window)
+        if password is None:
+            self.close()
+            return
+
         if menu_response == 'h':
             self.team = 'black'
             self.game_board._team = 'black'
             # Start the signaling server in the background.
             threading.Thread(target=self.start_signaling_server, daemon=True).start()
-            
+
             # Create a WebRTC client as the "offer" for hosting.
-            self.client = checkers_websockets_client("offer", "ws://localhost:5000", self)
+            self.client = checkers_websockets_client("offer", "ws://localhost:5000", self, password)
             threading.Thread(target=self.run_async_client, daemon=True).start()
     
         elif menu_response == 'c':
             self.team = 'red'
             self.game_board._team = 'red'
             # Create a WebRTC client as the "answer" for joining.
-            self.client = checkers_websockets_client("answer", "ws://localhost:5000", self)
+            self.client = checkers_websockets_client("answer", "ws://localhost:5000", self, password)
             threading.Thread(target=self.run_async_client, daemon=True).start()
 
         else:
