@@ -2,7 +2,7 @@ import asyncio
 import websockets
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 class checkers_websockets_server:
     def __init__(self, host="localhost", port=5000):

@@ -1,12 +1,14 @@
+import asyncio
 import pygame
 import threading
-from server import checkers_server
-from client import checkers_client
+import json
 from board import checkers_board
 from menu import checkers_menu
+from websockets_client import checkers_websockets_client  
+from websockets_server import checkers_websockets_server
 
 WIDTH, HEIGHT = 640, 640
-ROWS, COLS = 8,8
+ROWS, COLS = 8, 8
 SQUARE_SIZE = 512 // 8
 
 class checkers_game:
@@ -16,50 +18,46 @@ class checkers_game:
         self.clock = pygame.time.Clock()
         self.turn = 'black'
         
-        #pygame initialization
+        # Initialize pygame
         pygame.init()
         self.window = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("verdigris checkers")
+        pygame.display.set_caption("Verdigris Checkers")
 
         self.running = True
+        self.team = None
+        self.client = None
 
     def change_turn(self):
-        if self.turn == 'black':
-            self.turn = 'red'
-            self.game_board._turn = self.turn
-            self.game_board.update_valid_pieces()
-            
-        elif self.turn == 'red':
-            self.turn = 'black'
-            self.game_board._turn = self.turn
-            self.game_board.update_valid_pieces()
+        # Switch turn and update the board state
+        self.turn = 'red' if self.turn == 'black' else 'black'
+        self.game_board._turn = self.turn
+        self.game_board.update_valid_pieces()
 
     def send_move(self, move):
+        # Update the board with the move.
         self.game_board.move_piece(move)
+        # Send the move over WebRTC as a JSON message if the data channel is ready.
+        if self.client and self.client.channel and self.client.channel.readyState == "open":
+            print(f"Sent move: {move}")
+            self.client.send_move(move)
+        self.change_turn()
 
-        if hasattr(self, 'client'):
-            self.client.send_move(str(move))
-            self.change_turn()
+    def receive_move(self, move):
+        # Called by the WebRTC client's on_message handler when a move is received.
+        self.game_board.move_piece(move)
+        self.change_turn()
 
-        elif hasattr(self, 'server'):
-            self.server.send_move(str(move))
-            self.change_turn()
+    def start_signaling_server(self):
+        # Create and run a new event loop for the signaling server in this thread.
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(checkers_websockets_server().start())
 
-    def recieve_move(self):
-        if hasattr(self, 'client') and self.turn == 'black':
-            move = self.client.receive_move()
-            if move:
-                self.game_board.move_piece(eval(move))
-                self.change_turn()
-
-        elif hasattr(self, 'server') and self.turn == 'red':
-            move = self.server.receive_move()
-            if move:
-                self.game_board.move_piece(eval(move))
-                self.change_turn()
-
-    def validate_move(self, move):
-        return self.game_board.validate_move(move)
+    def run_async_client(self):
+        # Run the WebRTC client connection in a separate event loop.
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.client.connect_signaling())
 
     def main_loop(self):
         menu_response = self.menu.main_menu(self.window)
@@ -67,51 +65,46 @@ class checkers_game:
         if menu_response == 'h':
             self.team = 'black'
             self.game_board._team = 'black'
-            self.server = checkers_server()
-            threading.Thread(target=self.server.start_listener, daemon=True).start()
-            if self.server.wait_for_client(self.menu, self.window):
-                self.game_loop()
-            else:
-                self.close()
-
+            # Start the signaling server in the background.
+            threading.Thread(target=self.start_signaling_server, daemon=True).start()
+            # Create a WebRTC client as the "offer" for hosting.
+            self.client = checkers_websockets_client("offer", "ws://localhost:5000", self)
+            threading.Thread(target=self.run_async_client, daemon=True).start()
+    
         elif menu_response == 'c':
             self.team = 'red'
             self.game_board._team = 'red'
-            host_ip = self.menu.draw_input_ip(self.window)
-            self.client = checkers_client(host_ip)
-            self.client.connect_to_server()
-            self.game_loop()
-
-        else:
-            self.close()
+            # Create a WebRTC client as the "answer" for joining.
+            self.client = checkers_websockets_client("answer", "ws://localhost:5000", self)
+            threading.Thread(target=self.run_async_client, daemon=True).start()
+    
+        # Start the main game loop.
+        self.game_loop()
 
     def game_loop(self):
         while self.running:
-            self.clock.tick(60)  #60 FPS
+            self.clock.tick(60)  # 60 FPS
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-            
+
+                # If it's our turn, process mouse clicks for moves.
                 if self.turn == self.team:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = event.pos
-
                         col = (mouse_x // SQUARE_SIZE) - 1
                         row = (mouse_y // SQUARE_SIZE) - 1
-
-                        if (col >= 0 and col <= 7) and (row >= 0 and row <= 7):
+                        if (0 <= col <= 7) and (0 <= row <= 7):
                             if self.game_board._selected_piece is None:
                                 self.game_board.select_piece(row, col)
                             else:
-                                move = (self.game_board._selected_pos[0],self.game_board._selected_pos[1], row, col)
-
-                                if self.validate_move(move):
+                                move = (self.game_board._selected_pos[0],
+                                        self.game_board._selected_pos[1], row, col)
+                                if self.game_board.validate_move(move):
                                     self.send_move(move)
                                 self.game_board.deselect_piece()
-                else:
-                    self.recieve_move()
 
-            self.game_board.draw_board(self.window)            
+            self.game_board.draw_board(self.window)
             pygame.display.update()
 
             if self.game_board.check_win():
@@ -120,12 +113,8 @@ class checkers_game:
         self.close()
 
     def close(self):
-        if hasattr(self, 'server'):
-            self.server.close()
-
-        elif hasattr(self, 'client'):
-            self.client.close()
-
+        if self.client:
+            self.client.pc.close()
         pygame.quit()
 
 def main():
