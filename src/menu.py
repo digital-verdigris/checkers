@@ -30,10 +30,6 @@ class checkers_menu:
         self.input_text = ""
         self.active_input = False 
 
-    def draw_lan_or_web(self, window):
-        window.fill(GREEN)
-        window.blit(self.felt_img, (0, 0))
-
     def draw_menu(self, window):
         window.fill(GREEN)
         window.blit(self.felt_img, (0, 0))
@@ -72,8 +68,6 @@ class checkers_menu:
     def draw_win_screen(self, window, winner):
         while True:
             window.blit(self.felt_img, (0, 0))
-            winner_text = None
-            
             if winner == 'black':
                 winner_text = font.render(f"Black Wins!", True, BLACK)
             elif winner == 'red':
