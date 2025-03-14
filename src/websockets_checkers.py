@@ -74,8 +74,6 @@ class websockets_checkers_game:
         if menu_response == 'h':
             self.team = 'black'
             self.game_board._team = 'black'
-            # Start the signaling server in the background.
-            threading.Thread(target=self.start_signaling_server, daemon=True).start()
 
             # Create a WebRTC client as the "offer" for hosting.
             self.client = checkers_websockets_client("offer", "ws://localhost:5000", self, password)
