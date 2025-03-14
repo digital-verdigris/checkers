@@ -11,7 +11,7 @@ WIDTH, HEIGHT = 640, 640
 ROWS, COLS = 8, 8
 SQUARE_SIZE = 512 // 8
 
-class checkers_game:
+class websockets_checkers_game:
     def __init__(self):
         self.game_board = checkers_board()
         self.menu = checkers_menu()
@@ -143,10 +143,3 @@ class checkers_game:
         if self.client:
             self.client.pc.close()
         pygame.quit()
-
-def main():
-    game = checkers_game()
-    game.main_loop()
-
-if __name__ == "__main__":
-    main()
