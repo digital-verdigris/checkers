@@ -76,14 +76,14 @@ class websockets_checkers_game:
             self.game_board._team = 'black'
 
             # Create a WebRTC client as the "offer" for hosting.
-            self.client = checkers_websockets_client("offer", "ws://localhost:5000", self, password)
+            self.client = checkers_websockets_client("offer", "wss://localhost:5000", self, password)
             threading.Thread(target=self.run_async_client, daemon=True).start()
     
         elif menu_response == 'c':
             self.team = 'red'
             self.game_board._team = 'red'
             # Create a WebRTC client as the "answer" for joining.
-            self.client = checkers_websockets_client("answer", "ws://localhost:5000", self, password)
+            self.client = checkers_websockets_client("answer", "wss://localhost:5000", self, password)
             threading.Thread(target=self.run_async_client, daemon=True).start()
 
         else:

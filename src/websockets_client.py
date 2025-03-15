@@ -11,12 +11,18 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 import base64
 import os
+import ssl
 
 class checkers_websockets_client:
-    def __init__(self, role, signaling_url="ws://localhost:5000", game_instance = None, password = None):
+    def __init__(self, role, signaling_url="wss://localhost:5000", game_instance = None, password = None):
         self.role = role
         self.signaling_url = signaling_url
         self.pc = RTCPeerConnection()
+        
+        self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.ssl_context.check_hostname = False  # Self-signed certificates don't have a CA
+        self.ssl_context.verify_mode = ssl.CERT_NONE  # Ignore verification for self-signed certs
+
         self.channel = None
         self.game_instance = game_instance  # Reference to the game
         self.loop = None  # Will store the event loop running this client
@@ -61,7 +67,7 @@ class checkers_websockets_client:
             return None
 
     async def connect_signaling(self):
-        async with websockets.connect(self.signaling_url) as signaling:
+        async with websockets.connect(self.signaling_url, ssl=self.ssl_context) as signaling:
             print(f"Connected to signaling server as {self.role}")
             self.loop = asyncio.get_running_loop()  # Save the current event loop
             await self.run(signaling)

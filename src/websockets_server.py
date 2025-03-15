@@ -1,13 +1,16 @@
 import asyncio
 import websockets
 import logging
+import ssl
 
 #logging.basicConfig(level=logging.DEBUG)
 
 class checkers_websockets_server:
-    def __init__(self, host="localhost", port=5000):
+    def __init__(self, host="localhost", port=5000, cert="cert.pem", key="cert.key"):
         self.host = host
         self.port = port
+        self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.ssl_context.load_cert_chain(certfile=cert, keyfile=key)
         self.connected = set()
 
     async def handler(self, websocket):
@@ -30,8 +33,8 @@ class checkers_websockets_server:
                 await conn.send(message)
 
     async def start(self):
-        async with websockets.serve(self.handler, self.host, self.port):
-            logging.info(f"Signaling server is running on ws://{self.host}:{self.port}")
+        async with websockets.serve(self.handler, self.host, self.port, ssl=self.ssl_context):
+            logging.info(f"Signaling server is running on wss://{self.host}:{self.port}")
             await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
