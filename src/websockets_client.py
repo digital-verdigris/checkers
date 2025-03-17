@@ -143,7 +143,7 @@ class checkers_websockets_client:
         print("Data channel is open!")
         if self.game_instance:
             self.game_instance.notify_data_channel_opened()
-        # Remove terminal input for integrated game usage.
+        #remove terminal input for integrated game usage.
         # asyncio.create_task(self.terminal_input(self.channel))
 
     def on_datachannel(self, channel):
@@ -153,7 +153,7 @@ class checkers_websockets_client:
         if self.game_instance:
             self.game_instance.notify_data_channel_opened()
 
-        # Terminal input disabled for integration.
+        #terminal input disabled for integration.
         # if channel.readyState == "open":
         #     asyncio.create_task(self.delayed_send(channel))
         #     asyncio.create_task(self.terminal_input(channel))

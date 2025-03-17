@@ -44,7 +44,6 @@ class websockets_checkers_game:
         self.change_turn()
 
     def receive_move(self, move):
-        # Called by the WebRTC client's on_message handler when a move is received.
         self.game_board.move_piece(move)
         self.change_turn()
 
@@ -52,13 +51,11 @@ class websockets_checkers_game:
         self.channel_open = True
 
     def start_signaling_server(self):
-        # Create and run a new event loop for the signaling server in this thread.
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(checkers_websockets_server().start())
 
     def run_async_client(self):
-        # Run the WebRTC client connection in a separate event loop.
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.client.connect_signaling())
@@ -110,7 +107,6 @@ class websockets_checkers_game:
                 if event.type == pygame.QUIT:
                     self.running = False
 
-                # If it's our turn, process mouse clicks for moves.
                 if self.turn == self.team:
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = event.pos

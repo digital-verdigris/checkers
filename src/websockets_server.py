@@ -13,7 +13,7 @@ class checkers_websockets_server:
         self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         self.ssl_context.load_cert_chain(certfile=cert, keyfile=key)
         self.connected = set()
-        self.message_counts = {}  # Tracks messages per client
+        self.message_counts = {} 
         self.rate_limit = rate_limit
         self.per_seconds = per_seconds
 
@@ -41,10 +41,8 @@ class checkers_websockets_server:
         now = time.time()
         timestamps = self.message_counts[websocket]
 
-        # Remove outdated timestamps
         self.message_counts[websocket] = [t for t in timestamps if now - t < self.per_seconds]
 
-        # Add current timestamp and check if over limit
         self.message_counts[websocket].append(now)
         return len(self.message_counts[websocket]) > self.rate_limit
 
